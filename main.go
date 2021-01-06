@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -12,7 +14,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
-// warp of *git.Repository
+// Repo : warp of *git.Repository
 type Repo struct {
 	*git.Repository
 	TagsMap map[plumbing.Hash]*plumbing.Reference
@@ -21,10 +23,14 @@ type Repo struct {
 func main() {
 	var cwd = HandleError(os.Getwd()).(string)
 	var r = Repo{HandleError(git.PlainOpenWithOptions(cwd, &git.PlainOpenOptions{DetectDotGit: true})).(*git.Repository), make(map[plumbing.Hash]*plumbing.Reference)}
-	var branch = r.branchShowCurrent()
-	var tag = r.Describe()
-	fmt.Printf("%s:%s\n", branch, tag)
-
+	var gitDescribe = r.branchShowCurrent() + ":" + r.Describe()
+	var date = time.Now().Format("2006-01-02_15:04:05PM")
+	var goVersion = strings.Trim(string(HandleError(exec.Command("go", "version").Output()).([]byte)), "\n")
+	fmt.Println(strings.Join([]string{"go", "build", "-x", "-ldflags", fmt.Sprintf("-X 'github.com/liserjrqlxue/version.gitDescribe=%s' -X 'github.com/liserjrqlxue/version.buildStamp=%s' -X 'github.com/liserjrqlxue/version.golangVersion=%s'", gitDescribe, date, goVersion)}, " "))
+	var build = exec.Command("go", "build", "-x", "-ldflags", fmt.Sprintf("-X 'github.com/liserjrqlxue/version.gitDescribe=%s' -X 'github.com/liserjrqlxue/version.buildStamp=%s' -X 'github.com/liserjrqlxue/version.golangVersion=%s'", gitDescribe, date, goVersion))
+	build.Stdout = os.Stdout
+	build.Stderr = os.Stderr
+	CheckErr(build.Run())
 }
 
 func (r *Repo) head() *plumbing.Reference {
