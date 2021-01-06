@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -9,26 +10,25 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/liserjrqlxue/goUtil/simpleUtil"
 )
 
+// warp of *git.Repository
 type Repo struct {
 	*git.Repository
 	TagsMap map[plumbing.Hash]*plumbing.Reference
 }
 
 func main() {
-	var cwd = simpleUtil.HandleError(os.Getwd()).(string)
-	var r = Repo{simpleUtil.HandleError(git.PlainOpenWithOptions(cwd, &git.PlainOpenOptions{DetectDotGit: true})).(*git.Repository), make(map[plumbing.Hash]*plumbing.Reference)}
+	var cwd = HandleError(os.Getwd()).(string)
+	var r = Repo{HandleError(git.PlainOpenWithOptions(cwd, &git.PlainOpenOptions{DetectDotGit: true})).(*git.Repository), make(map[plumbing.Hash]*plumbing.Reference)}
 	var branch = r.branchShowCurrent()
 	var tag = r.Describe()
 	fmt.Printf("%s:%s\n", branch, tag)
-	//var git=gitWrapper
 
 }
 
 func (r *Repo) head() *plumbing.Reference {
-	return simpleUtil.HandleError(r.Head()).(*plumbing.Reference)
+	return HandleError(r.Head()).(*plumbing.Reference)
 }
 
 func (r *Repo) branchShowCurrent() string {
@@ -36,8 +36,8 @@ func (r *Repo) branchShowCurrent() string {
 }
 
 func (r *Repo) getTagMap() {
-	simpleUtil.CheckErr(
-		simpleUtil.HandleError(
+	CheckErr(
+		HandleError(
 			r.Tags(),
 		).(storer.ReferenceIter).
 			ForEach(
@@ -56,9 +56,9 @@ func (r *Repo) Describe() string {
 
 	var tag *plumbing.Reference
 	var count int
-	simpleUtil.CheckErr(
+	CheckErr(
 		// Fetch the reference log
-		simpleUtil.HandleError(
+		HandleError(
 			r.Log(
 				&git.LogOptions{
 					From:  r.head().Hash(),
@@ -97,4 +97,18 @@ func (r *Repo) Describe() string {
 		count,
 		r.head().Hash().String()[0:7],
 	)
+}
+
+// CheckErr log.Fatal if error
+func CheckErr(err error, msg ...string) {
+	if err != nil {
+		//panic(err)
+		log.Fatal(err, msg)
+	}
+}
+
+// HandleError CheckErr and return as interface
+func HandleError(a interface{}, err error) interface{} {
+	CheckErr(err)
+	return a
 }
