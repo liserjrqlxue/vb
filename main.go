@@ -82,12 +82,19 @@ func (r *Repo) Describe() string {
 	)
 	if count == 0 {
 		return fmt.Sprint(tag.Name().Short())
-	} else {
+	}
+	if tag == nil {
 		return fmt.Sprintf(
 			"%v-%v-g%v",
-			tag.Name().Short(),
+			"v0.0.0",
 			count,
 			r.head().Hash().String()[0:7],
 		)
 	}
+	return fmt.Sprintf(
+		"%v-%v-g%v",
+		tag.Name().Short(),
+		count,
+		r.head().Hash().String()[0:7],
+	)
 }
